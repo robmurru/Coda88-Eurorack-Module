@@ -16,8 +16,8 @@
     WAV Trigger:
     https://robertsonics.com/wav-trigger/
 
-    Eurorack Module Version my mexbeb 
-    https://github.com/sandrolab/coda-88
+    Eurorack Module Version my robmurru 
+    https://github.com/robmurru/Coda-88-Eurorack-Module
 
     Notes:
     - Removed onboard amp (line out output for eurorack usage)
@@ -46,17 +46,17 @@
 
 // VELOCITY
 #define velMinPiano 0
-#define velMaxPiano 75
-#define velMinMedio 75
-#define velMaxMedio 110
-#define velMinForte 110
+#define velMaxPiano 55
+#define velMinMedio 55
+#define velMaxMedio 90
+#define velMinForte 90
 #define velMaxForte 127
 
 // GAIN
 // -70 to +4
 #define gainMaster 0
 // -70 to +10
-#define gainMinPiano -50
+#define gainMinPiano -30
 #define gainMaxPiano -20
 #define gainMinMedio -20
 #define gainMaxMedio -5
@@ -153,13 +153,19 @@ void KeyOff(byte ch, byte noteoff, byte vel) {
 }
 
 void Sustain(byte ch, byte num, byte val) {
+  if (num != 64) return;  // ignore non-sustain CC messages
 
   DamperState = val;
 
-  for (int i = 0; i < AfterPedalLength; i++) {
-    wTrig.trackStop(AfterPedal[i] + instOffset);
-    wTrig.trackStop(AfterPedal[i] + instOffset + layerMedio);
-    wTrig.trackStop(AfterPedal[i] + instOffset + layerForte);
+  if (val == 0) {  // pedal released: stop held notes
+    for (int i = 0; i < AfterPedalLength; i++) {
+      if (AfterPedal[i] == 0) continue;
+      wTrig.trackStop(AfterPedal[i]);              // instOffset already baked in
+      wTrig.trackStop(AfterPedal[i] + layerMedio);
+      wTrig.trackStop(AfterPedal[i] + layerForte);
+      AfterPedal[i] = 0;
+    }
+    KeyCount = 0;
   }
 }
 
